@@ -12,6 +12,14 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 ROLES = ["Roam", "Exp", "Jungle", "Mid", "Gold"]
 QUEUES = ["Solo", "Duo", "Trio", "5-Stack"]
 
+RATING_COLS = {
+    "focus": "Focus Level",
+    "teammate_quality": "Teammate Quality",
+    "opponent_quality": "Opponent Quality",
+    "team_draft": "Team Draft Quality",
+    "enemy_draft": "Enemy Draft Difficulty",
+}
+
 
 def load_matches():
     res = supabase.table("matches").select("*").order("created_at", desc=True).execute()
@@ -113,6 +121,67 @@ else:
         breakdown_table("role")
     with tab_queue:
         breakdown_table("queue")
+
+st.divider()
+
+# ---------- Performance Insights ----------
+st.subheader("Performance Insights")
+st.caption("Does this factor actually affect your winrate?")
+
+if df.empty:
+    st.caption("Log a few matches first to see patterns.")
+else:
+    insight_tabs = st.tabs(list(RATING_COLS.values()))
+
+    for tab, (col, label) in zip(insight_tabs, RATING_COLS.items()):
+        with tab:
+            grouped = df.groupby(col).agg(
+                matches=("result", "count"),
+                wins=("result", lambda x: (x == "win").sum())
+            )
+            grouped["winrate"] = (grouped["wins"] / grouped["matches"] * 100).round(0)
+
+            # only show ratings with at least 1 match, fill gaps 1-5 for a clean axis
+            grouped = grouped.reindex(range(1, 6)).dropna(subset=["matches"])
+
+            if grouped.empty or len(grouped) < 2:
+                st.caption("Not enough spread in your data yet — log matches at different rating levels to see a trend.")
+            else:
+                st.bar_chart(grouped["winrate"])
+                st.caption(f"Winrate (%) by {label}, 1 = lowest, 5 = highest")
+
+                # quick average comparison: this rating in wins vs losses
+                avg_win = df[df["result"] == "win"][col].mean()
+                avg_loss = df[df["result"] == "loss"][col].mean()
+                colA, colB = st.columns(2)
+                colA.metric(f"Avg {label} in wins", round(avg_win, 1))
+                colB.metric(f"Avg {label} in losses", round(avg_loss, 1))
+
+st.divider()
+
+# ---------- Biggest Factor ----------
+st.subheader("What Matters Most")
+st.caption("Ranked by how much each factor differs between your wins and losses")
+
+if df.empty or len(df) < 4:
+    st.caption("Log a few more matches to unlock this.")
+else:
+    factor_gaps = []
+    for col, label in RATING_COLS.items():
+        avg_win = df[df["result"] == "win"][col].mean()
+        avg_loss = df[df["result"] == "loss"][col].mean()
+        gap = round(avg_win - avg_loss, 2)
+        factor_gaps.append({"Factor": label, "Avg in Wins": round(avg_win, 1), "Avg in Losses": round(avg_loss, 1), "Gap": gap})
+
+    gap_df = pd.DataFrame(factor_gaps)
+    gap_df["Abs Gap"] = gap_df["Gap"].abs()
+    gap_df = gap_df.sort_values("Abs Gap", ascending=False).drop(columns="Abs Gap")
+
+    st.dataframe(gap_df, use_container_width=True, hide_index=True)
+
+    top = gap_df.iloc[0]
+    direction = "higher" if top["Gap"] > 0 else "lower"
+    st.info(f"**{top['Factor']}** shows the biggest split — your wins average a {direction} rating here than your losses (gap of {abs(top['Gap'])}).")
 
 st.divider()
 
