@@ -96,6 +96,17 @@ with st.form("log_match", clear_on_submit=True):
             st.success(f"Saved: {hero} ({result})")
             st.rerun()
 
+# etaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        kills = st.number_input("Kills", min_value=0, step=1, value=0)
+    with col_b:
+        deaths = st.number_input("Deaths", min_value=0, step=1, value=0)
+    with col_c:
+        assists = st.number_input("Assists", min_value=0, step=1, value=0)
+
+    medal = st.selectbox("Medal", ["None", "Bronze", "Silver", "Gold", "MVP"])
+#etaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 st.divider()
 
 # ---------- Breakdown ----------
