@@ -67,6 +67,16 @@ with st.form("log_match", clear_on_submit=True):
 
     result = st.radio("Result", ["win", "loss"], horizontal=True)
 
+    col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        kills = st.number_input("Kills", min_value=0, step=1, value=0)
+    with col_b:
+        deaths = st.number_input("Deaths", min_value=0, step=1, value=0)
+    with col_c:
+        assists = st.number_input("Assists", min_value=0, step=1, value=0)
+
+    medal = st.selectbox("Medal", ["None", "Bronze", "Silver", "Gold", "MVP"])
+
     focus = st.slider("Focus Level", 1, 5, 3)
     teammate_quality = st.slider("Teammate Quality", 1, 5, 3)
     opponent_quality = st.slider("Opponent Quality", 1, 5, 3)
@@ -100,17 +110,6 @@ with st.form("log_match", clear_on_submit=True):
             st.success(f"Saved: {hero} ({result})")
             st.rerun()
 
-# etaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-col_a, col_b, col_c = st.columns(3)
-    with col_a:
-        kills = st.number_input("Kills", min_value=0, step=1, value=0)
-    with col_b:
-        deaths = st.number_input("Deaths", min_value=0, step=1, value=0)
-    with col_c:
-        assists = st.number_input("Assists", min_value=0, step=1, value=0)
-
-    medal = st.selectbox("Medal", ["None", "Bronze", "Silver", "Gold", "MVP"])
-#etaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 st.divider()
 
 # ---------- Breakdown ----------
@@ -204,13 +203,7 @@ st.divider()
 st.subheader("Match History")
 
 if df.empty:
-    ###############st.caption("No matches logged yet. Add your first one above.")
-    st.caption(
-                    f"{row['kills']}/{row['deaths']}/{row['assists']} KDA · {row['medal']} medal · "
-                    f"Focus {row['focus']} · Teammates {row['teammate_quality']} · "
-                    f"Opponents {row['opponent_quality']} · Team Draft {row['team_draft']} · "
-                    f"Enemy Draft {row['enemy_draft']}"
-                )
+    st.caption("No matches logged yet. Add your first one above.")
 else:
     for _, row in df.iterrows():
         with st.container(border=True):
@@ -218,6 +211,7 @@ else:
             with col1:
                 st.markdown(f"**{row['hero']}** · {row['role']} · {row['queue']} queue")
                 st.caption(
+                    f"{row['kills']}/{row['deaths']}/{row['assists']} KDA · {row['medal']} medal · "
                     f"Focus {row['focus']} · Teammates {row['teammate_quality']} · "
                     f"Opponents {row['opponent_quality']} · Team Draft {row['team_draft']} · "
                     f"Enemy Draft {row['enemy_draft']}"
