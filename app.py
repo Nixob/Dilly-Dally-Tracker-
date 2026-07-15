@@ -9,7 +9,7 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-ROLES = ["Tank", "Fighter", "Assassin", "Mage", "Marksman", "Support"]
+ROLES = ["Roam", "Exp", "Jungle", "Mid", "Gold"]
 QUEUES = ["Solo", "Duo", "Trio", "5-Stack"]
 
 
@@ -27,7 +27,7 @@ def delete_match(match_id):
 
 
 # ---------- Header ----------
-st.title("🎮 MLBB Match Log")
+st.title("MLBB Match Log")
 st.caption("Track every match. Find the pattern.")
 
 df = load_matches()
