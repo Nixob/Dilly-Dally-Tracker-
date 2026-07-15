@@ -204,7 +204,13 @@ st.divider()
 st.subheader("Match History")
 
 if df.empty:
-    st.caption("No matches logged yet. Add your first one above.")
+    ###############st.caption("No matches logged yet. Add your first one above.")
+    st.caption(
+                    f"{row['kills']}/{row['deaths']}/{row['assists']} KDA · {row['medal']} medal · "
+                    f"Focus {row['focus']} · Teammates {row['teammate_quality']} · "
+                    f"Opponents {row['opponent_quality']} · Team Draft {row['team_draft']} · "
+                    f"Enemy Draft {row['enemy_draft']}"
+                )
 else:
     for _, row in df.iterrows():
         with st.container(border=True):
