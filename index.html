@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Dilly Dally Timer</title>
+    <meta name="theme-color" content="#0d0d0d" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <style>
+      :root {
+        --bg: #0d0d0d;
+        --accent: #7f68b8;
+        --text: #b4b4b4;
+        --dim: color-mix(in srgb, var(--text) 50%, var(--bg));
+        --surf: color-mix(in srgb, var(--accent) 10%, var(--bg));
+        --line: color-mix(in srgb, var(--accent) 35%, var(--bg));
+        box-sizing: border-box;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Trebuchet MS", system-ui, sans-serif;
+        transition: background 0.15s;
+        overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      body.holding {
+        background: #3a1212;
+      }
+      body.ready {
+        background: #0f3a1d;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      #top {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 0;
+      }
+      #gear {
+        background: none;
+        border: 0;
+        width: 44px;
+        height: 44px;
+        font-size: 28px;
+        color: var(--accent);
+        padding: 0;
+      }
+      #menu {
+        display: none;
+        margin-top: 8px;
+        width: min(340px, calc(100vw - 24px));
+        max-height: calc(100vh - 90px);
+        overflow-y: auto;
+        background: var(--surf);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 6px;
+      }
+      #menu.open {
+        display: block;
+      }
+      .mh {
+        padding: 8px 10px;
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .sh {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 11px 12px;
+        margin-top: 6px;
+        text-align: left;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .sh b {
+        transition: transform 0.2s;
+      }
+      .sec.open .sh b {
+        transform: rotate(180deg);
+      }
+      .sb {
+        display: none;
+        padding: 4px 6px 8px;
+      }
+      .sec.open .sb {
+        display: block;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 4px;
+      }
+      .lbl {
+        flex: 1;
+      }
+      .info {
+        font-style: normal;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-size: 12px;
+        display: grid;
+        place-items: center;
+        cursor: help;
+      }
+      .tip {
+        order: 5;
+        flex-basis: 100%;
+        display: none;
+        font-style: normal;
+        font-size: 13px;
+        color: var(--dim);
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 8px;
+      }
+      .info:hover + .tip,
+      .tip.show {
+        display: block;
+      }
+      .sw input {
+        display: none;
+      }
+      .sw span {
+        display: block;
+        width: 44px;
+        height: 24px;
+        border-radius: 12px;
+        background: #3a3a3a;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .sw span::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ddd;
+        transition: left 0.2s;
+      }
+      .sw input:checked + span {
+        background: var(--accent);
+      }
+      .sw input:checked + span::after {
+        left: 23px;
+      }
+      select,
+      input[type="color"] {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 4px 6px;
+      }
+      input[type="color"] {
+        width: 44px;
+        height: 30px;
+        padding: 2px;
+      }
+      .btn {
+        background: var(--bg);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin: 4px 4px 0 0;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 9px;
+        margin-top: 4px;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      textarea {
+        width: 100%;
+        height: 70px;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        margin-top: 6px;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 70px 16px calc(120px + env(safe-area-inset-bottom, 0px));
+        touch-action: none;
+        cursor: pointer;
+      }
+      #scr {
+        font-size: clamp(18px, 4.6vw, 30px);
+        max-width: 900px;
+        line-height: 1.5;
+        color: var(--text);
+        letter-spacing: 0.04em;
+      }
+      #step {
+        height: 28px;
+        margin-top: 18px;
+        color: var(--accent);
+        font-size: 20px;
+        font-weight: 700;
+      }
+      #time {
+        font-size: clamp(72px, 24vw, 190px);
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        color: var(--text);
+      }
+      body.ready #time {
+        color: #4ade80;
+      }
+      body.holding #time {
+        color: #f87171;
+      }
+      #sp {
+        height: 24px;
+        color: var(--dim);
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      #splash {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: calc(18px + env(safe-area-inset-top, 0px));
+        text-align: center;
+        font-size: clamp(22px, 6vw, 34px);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--accent);
+        pointer-events: none;
+        z-index: 9;
+        animation: splashfade 4.5s ease forwards;
+      }
+      @keyframes splashfade {
+        0%,
+        65% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+      #sub {
+        color: var(--dim);
+        font-size: 18px;
+        margin-top: 14px;
+        min-height: 26px;
+      }
+      #sub b {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      #acts {
+        height: 44px;
+        margin-top: 10px;
+      }
+      #acts button {
+        background: var(--surf);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 14px;
+        margin: 0 4px;
+        color: var(--accent);
+      }
+      #hint {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        font-size: 13px;
+        color: var(--dim);
+        text-align: center;
+        pointer-events: none;
+        padding: 0 20px;
+      }
+      #prev {
+        position: fixed;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        width: min(250px, 50vw);
+        background: var(--surf);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 4px;
+        pointer-events: none;
+        z-index: 5;
+      }
+      #hist {
+        position: fixed;
+        right: 12px;
+        bottom: calc(30px + env(safe-area-inset-bottom, 0px) + min(250px, 50vw) * 0.75);
+        width: min(250px, 50vw);
+        background: var(--surf);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        z-index: 6;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+      }
+      .hhead {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        background: none;
+        border: 0;
+        padding: 9px 10px;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .hlist {
+        max-height: clamp(0px, calc(100vh - 380px), 300px);
+        overflow-y: auto;
+      }
+      .hrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 4px 4px 10px;
+        border-top: 1px solid var(--line);
+      }
+      .hn {
+        width: 2.4em;
+        color: var(--dim);
+      }
+      .ht {
+        flex: 1;
+      }
+      .hrow button {
+        background: none;
+        border: 0;
+        color: var(--dim);
+        padding: 4px 8px;
+      }
+      .hrow button:hover {
+        color: var(--accent);
+      }
+      #stats {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        background: var(--bg);
+        overflow-y: auto;
+        padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 40px;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      #stats.open {
+        display: block;
+      }
+      .wrap {
+        max-width: 820px;
+        margin: 0 auto;
+      }
+      h2 {
+        color: var(--accent);
+        margin: 22px 0 8px;
+        font-size: 19px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .top h1 {
+        font-size: 24px;
+        margin: 0;
+        color: var(--accent);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 8px;
+      }
+      .card {
+        background: var(--surf);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .card small {
+        display: block;
+        color: var(--dim);
+      }
+      .card span {
+        font-size: 22px;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-variant-numeric: tabular-nums;
+      }
+      td,
+      th {
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        white-space: nowrap;
+      }
+      th {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      td button {
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px 8px;
+        margin-right: 4px;
+        color: var(--dim);
+      }
+      .muted {
+        color: var(--dim);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="top">
+      <button id="gear" aria-label="Settings">⚙</button>
+      <div id="menu"></div>
+    </div>
+    <div id="splash">Dilly Dally Timer</div>
+    <main id="stage">
+      <div id="scr"></div>
+      <div id="step"></div>
+      <div id="time">0.00</div>
+      <div id="sp"></div>
+      <div id="sub"></div>
+      <div id="acts"></div>
+    </main>
+    <div id="hint"></div>
+    <div id="hist"></div>
+    <svg id="prev" viewBox="0 0 12 9"></svg>
+    <section id="stats">
+      <div class="wrap">
+        <div class="top">
+          <button class="btn" id="back">‹ Back</button>
+          <h1>Stats</h1>
+        </div>
+        <div id="sbody"></div>
+      </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script>
+      /*
+     =====================================================================
+      DILLY DALLY TIMER  -  how this file is organised
+     =====================================================================
+      1. Data & settings     what we store (solves + settings) in the browser
+      2. Formatting/averages turning milliseconds into text, ao5/ao12 maths
+      3. Scramble + preview  making the scramble and drawing the cube net
+      4. Cloud (Supabase)    login, syncing solves, leaderboard
+      5. Timer state machine idle -> holding -> ready -> running -> idle
+      6. Input               keyboard + touch/mouse events
+      7. Home screen         what is shown around the timer
+      8. Settings menu       the dropdown, built from the CFG list
+      9. Stats page          tables, graph, solve list
+
+      A "solve" is stored as an object with short field names:
+        t  = time in milliseconds
+        p  = penalty: 0 none, 1 = +2 seconds, 2 = DNF
+        s  = the scramble text
+        d  = date (ms since 1970)
+        sp = step splits in ms, e.g. [cross, f2l, oll, pll] (empty if off)
+        id = database id (only set once synced to Supabase)
+
+      EASY THINGS TO CHANGE
+        Scramble length ........ search "const len"
+        Step names ............. STEPS  (section 1)
+        Default colors ......... DEF    (section 1) and :root in the CSS
+        Hold-to-start delay .... setTimeout(...300) inside down()
+        Inspection length ...... search "15" inside tick() and go()
+     =====================================================================
+    */
+    const $ = (s) => document.querySelector(s),
+        K = "xyz_timer_v1";
+      // Default settings. Anything the user changes is saved over these.
+      const DEF = {
+        insp: false,
+        sound: true,
+        stop: "any",
+        hide: false,
+        splits: false,
+        smode: "lap",
+        avg: "roll",
+        bg: "#0d0d0d",
+        accent: "#7f68b8",
+        text: "#b4b4b4",
+      };
+      // D is the whole saved state: the list of solves and the settings.
+      const D = { solves: [], set: { ...DEF } },
+        set = D.set;
+      try {
+        const r = JSON.parse(localStorage.getItem(K));
+        if (r) {
+          D.solves = r.solves || [];
+          Object.assign(set, r.set);
+          if (set.accent == "#8b5cf6") set.accent = DEF.accent;
+        }
+      } catch (e) {}
+      const save = () => {
+        try {
+          localStorage.setItem(K, JSON.stringify(D));
+        } catch (e) {}
+      };
+
+      /* ---------- cloud (Supabase) ---------- */
+      const SB = window.supabase
+        ? supabase.createClient(
+            "https://czxypgzskrkmcchsfrqo.supabase.co",
+            "sb_publishable_9izvUisf2IliguekPAFdww_ARGhi8WW",
+          )
+        : null;
+      let me = null;
+      // Makes text safe to put inside HTML (stops usernames from injecting code).
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
+      // Supabase wants an email, so username "rahul" becomes rahul@xyztimer.app. No email is ever sent.
+      const email = (u) => u.toLowerCase() + "@xyztimer.app";
+      // Uploads any solves that do not have a database id yet.
+      async function push() {
+        if (!me) return;
+        const p = D.solves.filter((s) => !s.id);
+        if (!p.length) return;
+        const { data, error } = await SB.from("solves")
+          .insert(p.map((s) => ({ t: s.t, p: s.p, s: s.s, d: s.d, sp: s.sp })))
+          .select("id");
+        if (!error && data) {
+          p.forEach((s, i) => (s.id = data[i].id));
+          save();
+        }
+      }
+      // Tells the database a solve changed (+2 / DNF).
+      const cupd = (s) => {
+        if (me && s.id)
+          SB.from("solves")
+            .update({ p: s.p })
+            .eq("id", s.id)
+            .then(() => {});
+      };
+      // Tells the database a solve was deleted.
+      const cdel = (s) => {
+        if (me && s.id)
+          SB.from("solves")
+            .delete()
+            .eq("id", s.id)
+            .then(() => {});
+      };
+      // Downloads all of this user's solves from the database (uploads local ones first).
+      async function pull() {
+        await push();
+        let all = [],
+          from = 0;
+        for (;;) {
+          const { data, error } = await SB.from("solves")
+            .select("id,t,p,s,d,sp")
+            .eq("user_id", me.id)
+            .order("d")
+            .order("id")
+            .range(from, from + 999);
+          if (error || !data) return;
+          all = all.concat(data);
+          if (data.length < 1000) break;
+          from += 1000;
+        }
+        D.solves = all;
+        save();
+      }
+      // Checks if someone is logged in and loads their solves.
+      async function loadMe() {
+        if (!SB) return;
+        const {
+          data: { session },
+        } = await SB.auth.getSession();
+        if (!session) {
+          me = null;
+          return;
+        }
+        const { data } = await SB.from("profiles")
+          .select("username")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        me = {
+          id: session.user.id,
+          username: data ? data.username : session.user.email.split("@")[0],
+        };
+        await pull();
+      }
+      // Handles the Log in and Sign up buttons.
+      async function auth(kind) {
+        const u = $("#au").value.trim(),
+          pw = $("#ap").value,
+          m = $("#am");
+        if (!SB) {
+          m.textContent = "Cannot reach the server. Check your connection.";
+          return;
+        }
+        if (!/^[A-Za-z0-9_]{3,20}$/.test(u)) {
+          m.textContent = "Username: 3 to 20 letters, numbers or _";
+          return;
+        }
+        if (pw.length < 6) {
+          m.textContent = "Password needs at least 6 characters";
+          return;
+        }
+        m.textContent = "Working...";
+        if (kind == "signup") {
+          const { data, error } = await SB.auth.signUp({ email: email(u), password: pw });
+          if (error) {
+            m.textContent = /regist|exist/i.test(error.message)
+              ? "That username is taken. Pick another."
+              : error.message;
+            return;
+          }
+          if (!data.session) {
+            m.textContent = "Server needs email confirmation turned off. See setup steps.";
+            return;
+          }
+          const r = await SB.from("profiles").insert({ id: data.user.id, username: u });
+          if (r.error) {
+            await SB.auth.signOut();
+            m.textContent = "That username is taken. Pick another.";
+            return;
+          }
+        } else {
+          const { error } = await SB.auth.signInWithPassword({ email: email(u), password: pw });
+          if (error) {
+            m.textContent = "Wrong username or password";
+            return;
+          }
+        }
+        await loadMe();
+        buildMenu();
+        render();
+      }
+      // Logs out and clears local solves so accounts do not mix.
+      async function logout() {
+        await SB.auth.signOut();
+        me = null;
+        D.solves = [];
+        save();
+        buildMenu();
+        render();
+      }
+      // The HTML for the Account section (login form or "signed in as").
+      function acct() {
+        return me
+          ? `<div class="row"><span class="lbl">Signed in as <b>${esc(me.username)}</b></span></div><div class="muted" style="font-size:13px;padding:0 4px 6px">Your solves sync across your devices.</div><button class="btn" data-act="logout">Log out</button>`
+          : `<input type="text" id="au" placeholder="Username" autocomplete="username" autocapitalize="none"><input type="password" id="ap" placeholder="Password" autocomplete="current-password"><button class="btn" data-act="login">Log in</button><button class="btn" data-act="signup">Sign up</button><div id="am" class="muted" style="font-size:13px;padding:6px 4px"></div>`;
+      }
+      // Fetches and shows the leaderboard from the database.
+      async function loadLB() {
+        const el = $("#lb");
+        if (!el) return;
+        if (!me) {
+          el.innerHTML = '<p class="muted">Log in to see the leaderboard.</p>';
+          return;
+        }
+        const { data, error } = await SB.rpc("leaderboard");
+        if (error || !data) {
+          el.innerHTML = '<p class="muted">Could not load the leaderboard.</p>';
+          return;
+        }
+        el.innerHTML =
+          '<div class="scroll"><table><tr><th>#</th><th>User</th><th>Best ao5</th><th>Best single</th><th>Solves</th></tr>' +
+          data
+            .map(
+              (x, i) =>
+                `<tr><td>${i + 1}</td><td>${esc(x.username)}</td><td>${fmt(x.best_ao5)}</td><td>${fmt(x.best)}</td><td>${x.cnt}</td></tr>`,
+            )
+            .join("") +
+          "</table></div>";
+      }
+      const STEPS = ["Cross", "F2L", "OLL", "PLL"];
+
+      /* ---------- formatting & averages ---------- */
+      // "Effective" time of a solve: adds 2s for +2, and Infinity for DNF.
+      const eff = (s) => (s.p == 2 ? Infinity : s.t + (s.p == 1 ? 2000 : 0));
+      // Turns milliseconds into text like 12.34 or 1:05.20. Infinity shows as DNF.
+      const fmt = (ms) => {
+        if (ms == null || isNaN(ms)) return "—";
+        if (ms == Infinity) return "DNF";
+        const s = Math.round(ms / 10) / 100;
+        if (s >= 60) {
+          const m = Math.floor(s / 60);
+          return m + ":" + (s - m * 60).toFixed(2).padStart(5, "0");
+        }
+        return s.toFixed(2);
+      };
+      // Average of a list of solves. Drops the best and worst 5% (1 each for ao5/ao12), averages the rest.
+      const ao = (a) => {
+        const n = a.length;
+        if (!n) return null;
+        const c = Math.ceil(n * 0.05),
+          v = a
+            .map(eff)
+            .sort((x, y) => x - y)
+            .slice(c, n - c);
+        return v.reduce((x, y) => x + y, 0) / v.length;
+      };
+      // Current average of the last n solves (null if fewer than n solves).
+      const cur = (n) => (D.solves.length >= n ? ao(D.solves.slice(-n)) : null);
+      // Slides a window of n solves across the whole list and keeps the best average.
+      const bestAo = (n) => {
+        let b = null;
+        for (let i = 0; i + n <= D.solves.length; i++) {
+          const v = ao(D.solves.slice(i, i + n));
+          if (b == null || v < b) b = v;
+        }
+        return b;
+      };
+      // Block averages: solves 1-5, 6-10, 11-15... each group averaged separately.
+      const blocks = () => {
+        const o = [];
+        for (let i = 0; i + 5 <= D.solves.length; i += 5) o.push(ao(D.solves.slice(i, i + 5)));
+        return o;
+      };
+
+      /* ---------- scramble + preview ---------- */
+      // Builds a random scramble of 20 moves. Never uses the same axis twice in a row.
+      function scramble() {
+        const f = "UDRLFB",
+          ax = { U: 1, D: 1, R: 0, L: 0, F: 2, B: 2 },
+          m = [];
+        let la = -1;
+        const len = 20;
+        while (m.length < len) {
+          const x = f[(Math.random() * 6) | 0];
+          if (ax[x] == la) continue;
+          la = ax[x];
+          m.push(x + ["", "'", "2"][(Math.random() * 3) | 0]);
+        }
+        return m.join(" ");
+      }
+      // Rotates a 3D point 90 degrees around an axis (used to simulate cube turns).
+      const rot = (v, a, d) => {
+        const b = (a + 1) % 3,
+          c = (a + 2) % 3,
+          r = [...v];
+        if (d > 0) {
+          r[b] = -v[c];
+          r[c] = v[b];
+        } else {
+          r[b] = v[c];
+          r[c] = -v[b];
+        }
+        return r;
+      };
+      // For each face letter: [axis number, which side]. Axis 0=x, 1=y, 2=z.
+      const FACE = { U: [1, 1], D: [1, -1], R: [0, 1], L: [0, -1], F: [2, 1], B: [2, -1] },
+        COLS = ["#c62828", "#ef6c00", "#f5f5f5", "#fdd835", "#2e7d32", "#1565c0"];
+      // Works out where a sticker goes on the flat cube picture (the "net").
+      function netPos(p, n) {
+        const a = n[0] ? 0 : n[1] ? 1 : 2,
+          g = n[a],
+          [x, y, z] = p;
+        if (a == 1) return g > 0 ? [4 + x, z + 1] : [4 + x, 7 - z];
+        if (a == 2) return g > 0 ? [4 + x, 4 - y] : [10 - x, 4 - y];
+        return g > 0 ? [7 - z, 4 - y] : [z + 1, 4 - y];
+      }
+      // Simulates the scramble on 54 stickers, then paints them as an SVG picture.
+      function draw(s) {
+        const st = [];
+        for (let a = 0; a < 3; a++)
+          for (const g of [1, -1])
+            for (let u = -1; u < 2; u++)
+              for (let v = -1; v < 2; v++) {
+                const p = [0, 0, 0],
+                  n = [0, 0, 0];
+                p[a] = g;
+                n[a] = g;
+                p[(a + 1) % 3] = u;
+                p[(a + 2) % 3] = v;
+                st.push({ p, n, c: COLS[a * 2 + (g > 0 ? 0 : 1)] });
+              }
+        s.split(" ").forEach((t) => {
+          const [a, sg] = FACE[t[0]],
+            d = (sg > 0 ? -1 : 1) * (t[1] == "'" ? -1 : 1),
+            k = t[1] == "2" ? 2 : 1;
+          for (let i = 0; i < k; i++)
+            st.forEach((q) => {
+              if (q.p[a] == sg) {
+                q.p = rot(q.p, a, d);
+                q.n = rot(q.n, a, d);
+              }
+            });
+        });
+        $("#prev").innerHTML = st
+          .map((q) => {
+            const [x, y] = netPos(q.p, q.n);
+            return `<rect x="${x + 0.04}" y="${y + 0.04}" width=".92" height=".92" rx=".12" fill="${q.c}"/>`;
+          })
+          .join("");
+      }
+
+      /* ---------- state ---------- */
+      // Timer state. st: idle | insp (inspection) | running | paused (between segment-mode steps).
+      // hold: 0 not pressing, 1 pressing (red), 2 held long enough (green).
+      let st = "idle",
+        hold = 0,
+        locked = false,
+        holdT,
+        raf,
+        insp0 = 0,
+        inspPen = 0,
+        solveT0 = 0,
+        segT0 = 0,
+        splits = [],
+        stepI = 0,
+        curScr = scramble(),
+        lastHold = false;
+      const now = () => performance.now();
+      // Makes a new scramble and shows it + its preview picture.
+      // Makes a new scramble and shows it + its preview picture.
+      function setScr() {
+        curScr = scramble();
+        $("#scr").textContent = curScr;
+        draw(curScr);
+      }
+
+      // ---- Inspection sounds (8s and 12s warnings) ----
+      // b8 / b12 remember whether each beep already played during this inspection.
+      let b8 = false,
+        b12 = false,
+        audioCtx = null;
+      // Browsers only allow audio after a tap/keypress, so we create the audio engine
+      // at the moment inspection starts (which is triggered by the user releasing space/screen).
+      function getAudio() {
+        try {
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+        } catch (e) {}
+        return audioCtx;
+      }
+      // Plays `count` short beeps at `freq` Hz (higher number = higher pitch).
+      function beep(freq, count) {
+        if (!set.sound || !getAudio()) return;
+        for (let i = 0; i < count; i++) {
+          const osc = audioCtx.createOscillator(),
+            gain = audioCtx.createGain(),
+            t0 = audioCtx.currentTime + i * 0.22;
+          osc.type = "sine";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.0001, t0);
+          gain.gain.exponentialRampToValueAtTime(0.35, t0 + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t0);
+          osc.stop(t0 + 0.17);
+        }
+      }
+
+      // Runs every screen frame while timing, to update the number on screen.
+      function tick() {
+        cancelAnimationFrame(raf);
+        const n = now(),
+          T = $("#time");
+        if (st == "insp") {
+          const e = (n - insp0) / 1000;
+          if (e >= 8 && !b8) {
+            b8 = true;
+            beep(660, 1); // one beep at 8 seconds
+          }
+          if (e >= 12 && !b12) {
+            b12 = true;
+            beep(880, 2); // two higher beeps at 12 seconds
+          }
+          T.textContent = e > 17 ? "DNF" : e > 15 ? "+2" : Math.ceil(15 - e);
+        } else if (st == "running") {
+          const base = set.splits && set.smode == "seg" ? segT0 : solveT0;
+          T.textContent = set.hide ? "···" : fmt(n - base);
+        }
+        if (st == "insp" || st == "running") raf = requestAnimationFrame(tick);
+      }
+
+      // Updates the step name (Cross/F2L/...) and the split times under the timer.
+      function labels() {
+        $("#step").textContent =
+          st == "insp"
+            ? "Inspection"
+            : set.splits && (st == "running" || st == "paused")
+              ? (st == "paused" ? "Next: " : "") + STEPS[stepI]
+              : "";
+        $("#sp").textContent =
+          set.splits && (st == "running" || st == "paused")
+            ? splits.map((x, i) => STEPS[i] + " " + fmt(x)).join("   ")
+            : "";
+        renderHist(); // hides the history while a solve is in progress
+      }
+
+      // Called when the user releases after holding. Starts inspection or the solve.
+      function go() {
+        if (st == "idle" && set.insp) {
+          st = "insp";
+          insp0 = now();
+          b8 = b12 = false;
+          if (set.sound) getAudio();
+          labels();
+          tick();
+          return;
+        }
+        if (st == "paused") {
+          st = "running";
+          segT0 = now();
+        } else {
+          if (st == "insp") {
+            const e = (now() - insp0) / 1000;
+            inspPen = e > 17 ? 2 : e > 15 ? 1 : 0;
+          } else inspPen = 0;
+          st = "running";
+          solveT0 = segT0 = now();
+          splits = [];
+          stepI = 0;
+          $("#acts").innerHTML = "";
+          $("#hint").textContent = "";
+        }
+        labels();
+        tick();
+      }
+
+      // Called when the user stops/presses during a solve. Records a split or finishes.
+      function mark() {
+        const n = now();
+        if (!set.splits) {
+          finish(n - solveT0);
+          return;
+        }
+        splits.push(n - segT0);
+        segT0 = n;
+        stepI++;
+        if (stepI >= STEPS.length) {
+          finish(splits.reduce((a, b) => a + b, 0));
+          return;
+        }
+        if (set.smode == "seg") {
+          st = "paused";
+          cancelAnimationFrame(raf);
+          $("#time").textContent = fmt(splits[splits.length - 1]);
+        }
+        labels();
+      }
+
+      // Saves the solve, makes the next scramble and refreshes the screen.
+      function finish(ms) {
+        cancelAnimationFrame(raf);
+        st = "idle";
+        D.solves.push({
+          t: Math.round(ms),
+          p: inspPen,
+          s: curScr,
+          d: Date.now(),
+          sp: set.splits ? splits.map(Math.round) : [],
+        });
+        save();
+        push();
+        setScr();
+        labels();
+        render(true);
+      }
+
+      /* ---------- input ---------- */
+      // Press started (space key or finger). Either stops the timer, or starts the hold check.
+      function down() {
+        if (locked || hold) return;
+        if (st == "running") {
+          locked = true;
+          mark();
+          return;
+        }
+        hold = 1;
+        document.body.className = "holding";
+        holdT = setTimeout(() => {
+          hold = 2;
+          document.body.className = "ready";
+        }, 300);
+      }
+      // Press released. If we held long enough (green), start the timer.
+      function up() {
+        clearTimeout(holdT);
+        const was = hold;
+        hold = 0;
+        locked = false;
+        document.body.className = "";
+        if (was == 2) go();
+      }
+      // True when the menu or stats page is open, so the timer ignores the keyboard.
+      const busy = () =>
+        $("#menu").classList.contains("open") || $("#stats").classList.contains("open");
+      // Keyboard: space starts/stops; in "any key" mode any key stops. Esc cancels a solve.
+      addEventListener("keydown", (e) => {
+        if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
+        if (e.key == "Escape" && (st == "running" || st == "paused" || st == "insp")) {
+          cancelAnimationFrame(raf);
+          st = "idle";
+          hold = 0;
+          locked = false;
+          labels();
+          render();
+          return;
+        }
+        if (busy()) return;
+        if (e.code == "Space") {
+          e.preventDefault();
+          if (e.repeat) return;
+          down();
+        } else if (
+          st == "running" &&
+          set.stop == "any" &&
+          !e.repeat &&
+          !["Shift", "Control", "Alt", "Meta"].includes(e.key)
+        ) {
+          e.preventDefault();
+          down();
+        }
+      });
+      addEventListener("keyup", (e) => {
+        if (e.code == "Space" || locked) {
+          if (busy()) return;
+          up();
+        }
+      });
+      // Touch/mouse: the whole screen is the button. pointerdown = press, pointerup = release.
+      const stage = $("#stage");
+      stage.addEventListener("pointerdown", (e) => {
+        if ($("#menu").classList.contains("open")) {
+          $("#menu").classList.remove("open");
+          return;
+        }
+        if (st == "running" && set.stop == "space" && e.pointerType == "mouse") return;
+        e.preventDefault();
+        down();
+      });
+      stage.addEventListener("pointerup", () => {
+        if (hold || locked) up();
+      });
+      stage.addEventListener("pointercancel", () => {
+        if (hold || locked) up();
+      });
+
+      /* ---------- home render ---------- */
+      // Shows the +2 / DNF / Delete buttons for the last solve.
+      function undoBtns() {
+        $("#acts").innerHTML = D.solves.length
+          ? '<button data-a="p1">+2</button><button data-a="p2">DNF</button><button data-a="del">Delete</button>'
+          : "";
+      }
+      // Redraws the home screen: last time, the average line and the hint text.
+      function render(after) {
+        if (st == "idle") {
+          const l = D.solves[D.solves.length - 1];
+          $("#time").textContent = l ? fmt(eff(l)) : "0.00";
+          if (after) undoBtns();
+          else $("#acts").innerHTML = "";
+        }
+        const n = D.solves.length;
+        let h = "";
+        if (set.avg == "roll") h = `ao5 <b>${fmt(cur(5))}</b>`;
+        else {
+          h = n && n % 5 == 0 ? `block ao5 <b>${fmt(ao(D.solves.slice(-5)))}</b>` : "";
+        }
+        $("#sub").innerHTML = h;
+        $("#hint").textContent =
+          st == "idle"
+            ? matchMedia("(pointer:coarse)").matches
+              ? "Hold the screen until it turns green, then release"
+              : "Hold space until green, release to start"
+            : "";
+        renderHist();
+      }
+
+      // ---- Solve history box (right side, above the scramble picture) ----
+      // Starts collapsed on small screens so it does not cover the timer.
+      let histOpen = innerWidth >= 700;
+      // Redraws the box: newest solve first, each row has a delete button.
+      // It is hidden while inspecting/solving so it does not distract you.
+      function renderHist() {
+        const box = $("#hist"),
+          a = D.solves;
+        if (!a.length || st == "insp" || st == "running" || st == "paused") {
+          box.style.display = "none";
+          return;
+        }
+        box.style.display = "";
+        let h = `<button class="hhead" data-toggle>Solves (${a.length}) <span>${histOpen ? "▾" : "▸"}</span></button>`;
+        if (histOpen) {
+          h +=
+            '<div class="hlist">' +
+            a
+              .slice(-100)
+              .map((s, j, arr) => ({ i: a.length - arr.length + j, s }))
+              .reverse()
+              .map(
+                ({ i, s }) =>
+                  `<div class="hrow"><span class="hn">${i + 1}</span><span class="ht">${fmt(eff(s))}${s.p == 1 ? " (+2)" : ""}</span><button data-i="${i}" aria-label="Delete solve ${i + 1}">✕</button></div>`,
+              )
+              .join("") +
+            "</div>";
+        }
+        box.innerHTML = h;
+      }
+      $("#hist").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        if (b.dataset.toggle != null) {
+          histOpen = !histOpen;
+          renderHist();
+          return;
+        }
+        const i = +b.dataset.i,
+          s = D.solves[i];
+        if (!s) return;
+        D.solves.splice(i, 1); // remove from the list
+        cdel(s); // and from the database if logged in
+        save();
+        render(); // redraws the time, averages and this history box
+      });
+      $("#acts").onclick = (e) => {
+        const a = e.target.dataset.a,
+          l = D.solves[D.solves.length - 1];
+        if (!a || !l) return;
+        if (a == "del") {
+          D.solves.pop();
+          cdel(l);
+        } else {
+          l.p = l.p == (a == "p1" ? 1 : 2) ? 0 : a == "p1" ? 1 : 2;
+          cupd(l);
+        }
+        save();
+        render(true);
+      };
+      $("#scr").onclick = (e) => {
+        e.stopPropagation();
+        if (st == "idle") setScr();
+      };
+      $("#scr").onpointerdown = (e) => e.stopPropagation();
+
+      /* ---------- settings menu ---------- */
+      // The settings menu is generated from this list: [type, settingKey, label, options, infoText].
+      const CFG = [
+        [
+          "Timer",
+          [
+            [
+              "tog",
+              "insp",
+              "Inspection",
+              "Gives you 15 seconds to look at the cube before the solve. Starting after 15s adds +2, after 17s is a DNF.",
+            ],
+            [
+              "tog",
+              "sound",
+              "Inspection sounds",
+              "Plays a short beep at 8 seconds and a double beep at 12 seconds of inspection, like the WCA warnings. Only works when Inspection is on.",
+            ],
+            [
+              "sel",
+              "stop",
+              "Stop timer with",
+              [
+                ["any", "Any key"],
+                ["space", "Space only"],
+              ],
+              "On a phone the whole screen always stops the timer. On PC choose whether any key or only space stops it.",
+            ],
+            [
+              "tog",
+              "hide",
+              "Hide time while solving",
+              "Shows dots instead of the running clock. The result appears when you stop.",
+            ],
+            [
+              "tog",
+              "splits",
+              "Step splits (Cross / F2L / OLL / PLL)",
+              "Press once at the end of each step. Four presses finish the solve. Each step time is saved for per-step averages.",
+            ],
+            [
+              "sel",
+              "smode",
+              "Split mode",
+              [
+                ["lap", "Lap"],
+                ["seg", "Segment"],
+              ],
+              "Lap: the clock keeps running and you just press when a step ends. Segment: the clock stops after each step, then you hold and release to start the next one. Lap gives true solve times.",
+            ],
+          ],
+        ],
+        [
+          "Appearance",
+          [
+            ["col", "bg", "Background"],
+            ["col", "accent", "Accent"],
+            ["col", "text", "Text"],
+            ["raw", '<button class="btn" data-act="colors">Reset colors</button>'],
+          ],
+        ],
+        [
+          "Data",
+          [
+            [
+              "sel",
+              "avg",
+              "Average mode",
+              [
+                ["roll", "Rolling"],
+                ["block", "Block"],
+              ],
+              "Rolling: always the average of your last 5 (and 12) solves, updating every solve. Block: counts solves in groups of 5. After the 5th solve it shows that group's average, and on the 6th solve it resets and starts a new group.",
+            ],
+            [
+              "raw",
+              '<textarea id="io" placeholder="Export shows your data here. To import, paste it here and press Import." spellcheck="false"></textarea><button class="btn" data-act="export">Export</button><button class="btn" data-act="import">Import</button><button class="btn" data-act="reset">Delete all solves</button>',
+            ],
+          ],
+        ],
+      ];
+      // Turns CFG (plus the Account section) into HTML for the dropdown menu.
+      function buildMenu() {
+        const inf = (i) => (i ? `<i class="info">i</i><i class="tip">${i}</i>` : "");
+        let h =
+          '<div class="mh">Dilly Dally Timer</div><div class="sec open"><button class="sh" data-sec>Account<b>▾</b></button><div class="sb">' +
+          acct() +
+          "</div></div>";
+        CFG.forEach(([n, rows]) => {
+          h +=
+            `<div class="sec"><button class="sh" data-sec>${n}<b>▾</b></button><div class="sb">` +
+            rows
+              .map(([t, k, l, o, i]) => {
+                if (t == "raw") return k;
+                if (t == "tog")
+                  return `<div class="row"><span class="lbl">${l}</span>${inf(o)}<label class="sw"><input type="checkbox" data-k="${k}"><span></span></label></div>`;
+                if (t == "col")
+                  return `<div class="row"><span class="lbl">${l}</span><input type="color" data-k="${k}"></div>`;
+                return `<div class="row"><span class="lbl">${l}</span>${inf(i)}<select data-k="${k}">${o.map(([v, x]) => `<option value="${v}">${x}</option>`).join("")}</select></div>`;
+              })
+              .join("") +
+            "</div></div>";
+        });
+        h += '<button class="sh" data-act="stats">Stats <b>›</b></button>';
+        $("#menu").innerHTML = h;
+        $("#menu")
+          .querySelectorAll("[data-k]")
+          .forEach((e) => {
+            if (e.type == "checkbox") e.checked = set[e.dataset.k];
+            else e.value = set[e.dataset.k];
+          });
+      }
+      // Pushes the chosen colors into the CSS variables at the top of the stylesheet.
+      function theme() {
+        const r = document.documentElement.style;
+        r.setProperty("--bg", set.bg);
+        r.setProperty("--accent", set.accent);
+        r.setProperty("--text", set.text);
+      }
+      $("#gear").onclick = () => $("#menu").classList.toggle("open");
+      let armed = 0;
+      $("#menu").addEventListener("click", (e) => {
+        const t = e.target,
+          sec = t.closest("[data-sec]"),
+          act = t.dataset.act || (t.closest("[data-act]") || { dataset: {} }).dataset.act;
+        if (t.classList.contains("info")) {
+          t.nextElementSibling.classList.toggle("show");
+          return;
+        }
+        if (sec) {
+          sec.parentNode.classList.toggle("open");
+          return;
+        }
+        if (act == "login" || act == "signup") auth(act);
+        if (act == "logout") logout();
+        if (act == "stats") {
+          $("#menu").classList.remove("open");
+          showStats();
+        }
+        if (act == "colors") {
+          Object.assign(set, { bg: DEF.bg, accent: DEF.accent, text: DEF.text });
+          theme();
+          save();
+          buildMenu();
+          $("#menu").querySelectorAll(".sec")[1].classList.add("open");
+        }
+        if (act == "export") {
+          $("#io").value = JSON.stringify(D.solves);
+          $("#io").select();
+        }
+        if (act == "import") {
+          try {
+            const a = JSON.parse($("#io").value);
+            if (!Array.isArray(a)) throw 0;
+            D.solves = D.solves.concat(
+              a
+                .filter((s) => s && typeof s.t == "number")
+                .map((s) => ({
+                  t: s.t,
+                  p: s.p || 0,
+                  s: s.s || "",
+                  d: s.d || Date.now(),
+                  sp: s.sp || [],
+                })),
+            );
+            save();
+            push();
+            render();
+            $("#io").value = "Imported " + a.length + " solves";
+          } catch (x) {
+            $("#io").value = "Could not read that data. Paste the exported text exactly.";
+          }
+        }
+        if (act == "reset") {
+          if (!armed) {
+            armed = 1;
+            t.textContent = "Press again to confirm";
+            setTimeout(() => {
+              armed = 0;
+              t.textContent = "Delete all solves";
+            }, 3000);
+          } else {
+            if (me)
+              SB.from("solves")
+                .delete()
+                .eq("user_id", me.id)
+                .then(() => {});
+            D.solves = [];
+            save();
+            render();
+            armed = 0;
+            t.textContent = "Deleted";
+          }
+        }
+      });
+      $("#menu").addEventListener("change", (e) => {
+        const k = e.target.dataset.k;
+        if (!k) return;
+        set[k] = e.target.type == "checkbox" ? e.target.checked : e.target.value;
+        theme();
+        save();
+        render();
+        e.target.blur();
+      });
+      $("#menu").addEventListener("input", (e) => {
+        if (e.target.type == "color") {
+          set[e.target.dataset.k] = e.target.value;
+          theme();
+          save();
+        }
+      });
+
+      /* ---------- stats page ---------- */
+      // Opens the stats page.
+      function showStats() {
+        renderStats();
+        $("#stats").classList.add("open");
+      }
+      $("#back").onclick = () => {
+        $("#stats").classList.remove("open");
+        render();
+      };
+      // Draws the progress graph as an SVG: grey = each solve, purple = ao12.
+      function graph() {
+        const a = D.solves.slice(-100);
+        if (a.length < 2) return '<p class="muted">Solve a few more times to see your graph.</p>';
+        const v = a.map((s) => eff(s)),
+          fin = v.filter(isFinite),
+          mx = Math.max(...fin),
+          mn = Math.min(...fin),
+          W = 600,
+          H = 200,
+          x = (i) => 10 + (i * (W - 20)) / (a.length - 1),
+          y = (t) => H - 14 - ((t - mn) / (mx - mn || 1)) * (H - 28);
+        const pts = v
+          .map((t, i) => (isFinite(t) ? x(i) + "," + y(t) : null))
+          .filter(Boolean)
+          .join(" ");
+        const ln = [];
+        for (let i = 11; i < a.length; i++) {
+          const m = ao(a.slice(i - 11, i + 1));
+          if (isFinite(m)) ln.push(x(i) + "," + y(m));
+        }
+        return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:var(--surf);border:1px solid var(--line);border-radius:10px"><polyline points="${pts}" fill="none" stroke="var(--dim)" stroke-width="1.5"/>${ln.length > 1 ? `<polyline points="${ln.join(" ")}" fill="none" stroke="var(--accent)" stroke-width="3"/>` : ""}<text x="12" y="16" fill="var(--dim)" font-size="12">${fmt(mx)}</text><text x="12" y="${H - 3}" fill="var(--dim)" font-size="12">${fmt(mn)}</text></svg><p class="muted" style="margin:4px 0 0">Grey: single solves. Purple: ao12. Last ${a.length} solves.</p>`;
+      }
+      // Builds the whole stats page as HTML text.
+      function renderStats() {
+        const a = D.solves,
+          f = a.filter((s) => s.p < 2).map(eff),
+          best = f.length ? Math.min(...f) : null,
+          mean = f.length ? f.reduce((x, y) => x + y, 0) / f.length : null;
+        let h = `<div class="grid"><div class="card"><small>Solves</small><span>${a.length}</span></div><div class="card"><small>Best single</small><span>${fmt(best)}</span></div><div class="card"><small>Mean</small><span>${fmt(mean)}</span></div></div>`;
+        h +=
+          '<h2>Averages</h2><div class="scroll"><table><tr><th></th><th>Current</th><th>Best</th></tr>' +
+          [5, 12, 50, 100]
+            .map((n) => `<tr><td>ao${n}</td><td>${fmt(cur(n))}</td><td>${fmt(bestAo(n))}</td></tr>`)
+            .join("") +
+          "</table></div>";
+        const b = blocks(),
+          bf = b.filter(isFinite);
+        h +=
+          `<h2>Block averages (groups of 5)</h2>` +
+          (b.length
+            ? `<p>Average of all blocks: <b>${fmt(bf.length ? bf.reduce((x, y) => x + y, 0) / bf.length : null)}</b> &nbsp; Best block: <b>${fmt(Math.min(...b))}</b></p><div class="scroll"><table><tr>${b.map((_, i) => `<th>#${i + 1}</th>`).join("")}</tr><tr>${b.map((x) => `<td>${fmt(x)}</td>`).join("")}</tr></table></div>`
+            : '<p class="muted">Finish 5 solves to get your first block.</p>');
+        const sp = a.filter((s) => s.sp && s.sp.length == 4 && s.p < 2);
+        h +=
+          "<h2>Step averages</h2>" +
+          (sp.length
+            ? '<div class="scroll"><table><tr><th>Step</th><th>Average</th><th>Best</th></tr>' +
+              STEPS.map((n, i) => {
+                const v = sp.map((s) => s.sp[i]);
+                return `<tr><td>${n}</td><td>${fmt(v.reduce((x, y) => x + y, 0) / v.length)}</td><td>${fmt(Math.min(...v))}</td></tr>`;
+              }).join("") +
+              `</table></div><p class="muted">From ${sp.length} solves with splits.</p>`
+            : '<p class="muted">Turn on Step splits in Timer settings and finish a solve to see per-step averages.</p>');
+        h += "<h2>Progress</h2>" + graph();
+        h +=
+          "<h2>Recent solves</h2>" +
+          (a.length
+            ? '<div class="scroll"><table>' +
+              a
+                .slice(-50)
+                .map((s, j, arr) => {
+                  const i = a.length - arr.length + j;
+                  return { i, s };
+                })
+                .reverse()
+                .map(
+                  ({ i, s }) =>
+                    `<tr><td>${i + 1}</td><td>${fmt(eff(s))}${s.p == 1 ? " (+2)" : ""}</td><td>${s.sp && s.sp.length ? s.sp.map(fmt).join(" / ") : ""}</td><td><button data-i="${i}" data-a="p1">+2</button><button data-i="${i}" data-a="p2">DNF</button><button data-i="${i}" data-a="del">✕</button></td></tr>`,
+                )
+                .join("") +
+              "</table></div>"
+            : '<p class="muted">No solves yet. Go back and hold space.</p>');
+        h += '<h2>Leaderboard</h2><div id="lb"></div>';
+        $("#sbody").innerHTML = h;
+        loadLB();
+      }
+      $("#sbody").onclick = (e) => {
+        const t = e.target,
+          i = t.dataset.i,
+          a = t.dataset.a;
+        if (i == null) return;
+        const s = D.solves[i];
+        if (a == "del") {
+          D.solves.splice(i, 1);
+          cdel(s);
+        } else {
+          const v = a == "p1" ? 1 : 2;
+          s.p = s.p == v ? 0 : v;
+          cupd(s);
+        }
+        save();
+        renderStats();
+      };
+
+      /* ---------- init ---------- */
+      theme();
+      buildMenu();
+      $("#scr").textContent = curScr;
+      draw(curScr);
+      render();
+      loadMe()
+        .then(() => {
+          buildMenu();
+          render();
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>
